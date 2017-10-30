@@ -3,6 +3,8 @@ package impl
 import (
 	// "fmt"
 	"encoding/json"
+	"github.com/boltdb/bolt"
+	"github.com/meditativeape/urlshort/util"
 	"gopkg.in/yaml.v2"
 	"net/http"
 )
@@ -86,4 +88,31 @@ func parseJSON(inputJson []byte) (*[]map[string]string, error) {
 	parsedJSON := make([]map[string]string, 0)
 	err := json.Unmarshal(inputJson, &parsedJSON)
 	return &parsedJSON, err
+}
+
+// Bolt
+func BoltHandler(db *bolt.DB, fallback http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		var redirect string
+		err := db.View(func(tx *bolt.Tx) error {
+			bucket := tx.Bucket([]byte(util.BucketName))
+			if bucket != nil {
+				v := bucket.Get([]byte(path))
+				redirect = string(v)
+			}
+			return nil
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		if redirect != "" {
+			header := w.Header()
+			header.Set("Location", redirect)
+			w.WriteHeader(302)
+		} else {
+			fallback.ServeHTTP(w, r)
+		}
+	}
 }
