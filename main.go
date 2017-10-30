@@ -10,7 +10,7 @@ import (
 
 func main() {
 	yamlPath := flag.String("yaml", "", "Path to a YAML config file")
-	// jsonPath := flag.String("json", "", "Path to a JSON config file")
+	jsonPath := flag.String("json", "", "Path to a JSON config file")
 	flag.Parse()
 	mux := defaultMux()
 
@@ -21,13 +21,21 @@ func main() {
 	}
 	handler := impl.MapHandler(pathsToUrls, mux)
 
-	// If yaml flag is set, read the yaml file, and build the YAMLHandler using
-	// mapHandler as the fallback
-	fmt.Println(*yamlPath)
+	// If yaml flag is set, read the yaml file, and build a YAMLHandler using
+	// the current handler as the fallback
 	if len(*yamlPath) > 0 {
 		yaml, err := ioutil.ReadFile(*yamlPath)
 		check(err)
 		handler, err = impl.YAMLHandler([]byte(yaml), handler)
+		check(err)
+	}
+
+	// If json flag is set, read the json file, and build a JSONHandler using
+	// the current handler as the fallback
+	if len(*jsonPath) > 0 {
+		json, err := ioutil.ReadFile(*jsonPath)
+		check(err)
+		handler, err = impl.JSONHandler([]byte(json), handler)
 		check(err)
 	}
 

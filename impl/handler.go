@@ -2,6 +2,7 @@ package impl
 
 import (
 	// "fmt"
+	"encoding/json"
 	"gopkg.in/yaml.v2"
 	"net/http"
 )
@@ -46,10 +47,7 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	if err != nil {
 		return nil, err
 	}
-	pathsToUrls := make(map[string]string)
-	for _, v := range *parsedYAML {
-		pathsToUrls[v["path"]] = v["url"]
-	}
+	pathsToUrls := makeMap(parsedYAML)
 	return MapHandler(pathsToUrls, fallback), nil
 }
 
@@ -57,4 +55,35 @@ func parseYAML(yml []byte) (*[]map[string]string, error) {
 	parsedYAML := make([]map[string]string, 0)
 	err := yaml.Unmarshal(yml, &parsedYAML)
 	return &parsedYAML, err
+}
+
+func makeMap(parsed *[]map[string]string) map[string]string {
+	pathsToUrls := make(map[string]string)
+	for _, v := range *parsed {
+		pathsToUrls[v["path"]] = v["url"]
+	}
+	return pathsToUrls
+}
+
+// Similar to YAMLHandler, but parses JSON instead.
+// JSON is expected to be in the format:
+// [
+//    {"path": "/some-path",
+//	   "url": "https://www.some-url.com/demo"}
+// ]
+//
+//
+func JSONHandler(inputJson []byte, fallback http.Handler) (http.HandlerFunc, error) {
+	parsedJSON, err := parseJSON(inputJson)
+	if err != nil {
+		return nil, err
+	}
+	pathsToUrls := makeMap(parsedJSON)
+	return MapHandler(pathsToUrls, fallback), nil
+}
+
+func parseJSON(inputJson []byte) (*[]map[string]string, error) {
+	parsedJSON := make([]map[string]string, 0)
+	err := json.Unmarshal(inputJson, &parsedJSON)
+	return &parsedJSON, err
 }

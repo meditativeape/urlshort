@@ -1,0 +1,10 @@
+[
+	{
+		"path": "/soccer",
+		"url": "https://www.reddit.com/r/soccer"
+	},
+	{
+		"path": "/go",
+		"url": "https://www.reddit.com/r/golang"
+	}
+]
